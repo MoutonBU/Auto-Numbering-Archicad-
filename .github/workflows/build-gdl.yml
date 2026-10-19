@@ -190,11 +190,13 @@ jobs:
           _len = strlen(_id)
           _i = 1
           _num = 0
+          _hasd = 0
           while _i <= _len do
           	_ch = strsub(_id, _i, 1)
           	_p = strstr("0123456789", _ch)
           	if _p > 0 then
           		_num = _num * 10 + _p - 1
+          		_hasd = 1
           	endif
           	_i = _i + 1
           endwhile
@@ -229,6 +231,26 @@ jobs:
           endif
           if strlen(_id) = 0 & numSource = 0 then
           	_body = "?"
+          endif
+          if _hasd = 0 & strlen(_id) > 0 & numSource = 0 then
+          	_body = ""
+          	_up = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          	_lo = "abcdefghijklmnopqrstuvwxyz"
+          	for _k = 1 to strlen(_id)
+          		_c = strsub(_id, _k, 1)
+          		_q = strstr(_up, _c)
+          		if _q = 0 then
+          			_q = strstr(_lo, _c)
+          		endif
+          		if _q > 0 then
+          			if numFormat = 2 then
+          				_c = strsub(_lo, _q, 1)
+          			else
+          				_c = strsub(_up, _q, 1)
+          			endif
+          		endif
+          		_body = _body + _c
+          	next _k
           endif
           _txt = prefix + _body + suffix
 
