@@ -319,18 +319,50 @@ jobs:
           cat > pack/BUILD_GSM.bat <<'EOF'
           @echo off
           setlocal
+          net session >nul 2>&1
+          if errorlevel 1 (
+            echo Asking for administrator rights...
+            powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+            exit /b
+          )
           set "LPX="
-          for %%V in (28 29 27 26) do if not defined LPX if exist "%ProgramFiles%\GRAPHISOFT\Archicad %%V\LP_XMLConverter.exe" set "LPX=%ProgramFiles%\GRAPHISOFT\Archicad %%V\LP_XMLConverter.exe"
+          set "ACDIR="
+          for %%V in (28 29 27 26) do if not defined LPX if exist "%ProgramFiles%\GRAPHISOFT\Archicad %%V\LP_XMLConverter.exe" (
+            set "LPX=%ProgramFiles%\GRAPHISOFT\Archicad %%V\LP_XMLConverter.exe"
+            set "ACDIR=%ProgramFiles%\GRAPHISOFT\Archicad %%V"
+          )
           if not defined LPX (
             echo Could not find LP_XMLConverter.exe in your Archicad folder.
             pause
             exit /b 1
           )
           echo Using: %LPX%
-          if not exist "%~dp0out" mkdir "%~dp0out"
-          "%LPX%" hsf2l "%~dp0src" "%~dp0out"
+          set "OUT=%~dp0out"
+          if exist "%OUT%" rmdir /s /q "%OUT%"
+          mkdir "%OUT%"
+          "%LPX%" hsf2l "%~dp0src" "%OUT%"
+          set "LIB="
+          for /d %%D in ("%ACDIR%\Archicad Library*") do if not defined LIB set "LIB=%%~fD"
+          set "FALLBACK=0"
+          if not defined LIB (
+            set "FALLBACK=1"
+            set "LIB=%USERPROFILE%\Documents\GRAPHISOFT\AutoNumberText Library"
+          )
+          mkdir "%LIB%\AutoNumberText" 2>nul
+          copy /y "%OUT%\*.gsm" "%LIB%\AutoNumberText\" >nul
+          if errorlevel 1 (
+            echo Copy failed. The built file is in: %OUT%
+            pause
+            exit /b 1
+          )
           echo.
-          echo Done. Add the .gsm from the out folder in Archicad Library Manager.
+          echo Installed to: %LIB%\AutoNumberText
+          if "%FALLBACK%"=="1" (
+            echo Archicad's library folder was not found. In Archicad: File - Libraries and Objects - Library Manager - Add, pick:
+            echo %LIB%
+          ) else (
+            echo In Archicad: File - Libraries and Objects - Library Manager - Reload Libraries. Then find AutoNumberText in the Object tool.
+          )
           pause
           EOF
           sed -i 's/$/\r/' pack/BUILD_GSM.bat
