@@ -46,7 +46,6 @@ jobs:
           	<CalledMacros SectVersion="2" SectionFlags="0" SubIdent="0"/>
           	<Script_3D SectVersion="20" SectionFlags="0" SubIdent="0"/>
           	<Script_2D SectVersion="20" SectionFlags="0" SubIdent="0"/>
-          	<Script_UI SectVersion="20" SectionFlags="0" SubIdent="0"/>
           	<Script_VL SectVersion="20" SectionFlags="0" SubIdent="0"/>
           	<ParamSection SectVersion="27" SectionFlags="0" SubIdent="0"/>
           	<Copyright SectVersion="1" SectionFlags="0" SubIdent="0"/>
@@ -127,55 +126,55 @@ jobs:
           			<Value>0</Value>
           		</Length>
           		<RealNum Name="txtSize">
-          			<Description><![CDATA["Text size (mm on paper)"]]></Description>
+          			<Description><![CDATA["7. Text: size (mm on paper)"]]></Description>
           			<Value>3.5</Value>
           		</RealNum>
           		<String Name="txtFont">
-          			<Description><![CDATA["Font"]]></Description>
+          			<Description><![CDATA["5. Text: font"]]></Description>
           			<Value><![CDATA["Arial"]]></Value>
           		</String>
           		<Integer Name="txtStyle">
-          			<Description><![CDATA["Style"]]></Description>
+          			<Description><![CDATA["6. Text: style"]]></Description>
           			<Value>0</Value>
           		</Integer>
           		<PenColor Name="txtPen">
-          			<Description><![CDATA["Text pen"]]></Description>
+          			<Description><![CDATA["8. Text: pen"]]></Description>
           			<Value>1</Value>
           		</PenColor>
           		<Integer Name="numSource">
-          			<Description><![CDATA["Number source"]]></Description>
+          			<Description><![CDATA["1. Number: source"]]></Description>
           			<Value>0</Value>
           		</Integer>
           		<Integer Name="manualNum">
-          			<Description><![CDATA["Manual number"]]></Description>
+          			<Description><![CDATA["2. Number: manual value (0 - 100000000)"]]></Description>
           			<Value>1</Value>
           		</Integer>
           		<Integer Name="numFormat">
-          			<Description><![CDATA["Number format"]]></Description>
+          			<Description><![CDATA["3. Number: format (digits / letters)"]]></Description>
           			<Value>0</Value>
           		</Integer>
           		<Integer Name="padding">
-          			<Description><![CDATA["Zero padding (digits)"]]></Description>
+          			<Description><![CDATA["4. Number: zero padding"]]></Description>
           			<Value>0</Value>
           		</Integer>
           		<String Name="prefix">
-          			<Description><![CDATA["Text before the number"]]></Description>
+          			<Description><![CDATA["9. Text: before number"]]></Description>
           			<Value><![CDATA[""]]></Value>
           		</String>
           		<String Name="suffix">
-          			<Description><![CDATA["Text after the number"]]></Description>
+          			<Description><![CDATA["10. Text: after number"]]></Description>
           			<Value><![CDATA[""]]></Value>
           		</String>
           		<Integer Name="frameType">
-          			<Description><![CDATA["Frame"]]></Description>
+          			<Description><![CDATA["11. Frame: type"]]></Description>
           			<Value>0</Value>
           		</Integer>
           		<RealNum Name="frameSize">
-          			<Description><![CDATA["Frame size (mm on paper)"]]></Description>
+          			<Description><![CDATA["12. Frame: size (mm on paper)"]]></Description>
           			<Value>4</Value>
           		</RealNum>
           		<PenColor Name="framePen">
-          			<Description><![CDATA["Frame pen"]]></Description>
+          			<Description><![CDATA["13. Frame: pen"]]></Description>
           			<Value>1</Value>
           		</PenColor>
           	</Parameters>
@@ -249,45 +248,6 @@ jobs:
           values "manualNum" range [0, 100000000]
           values{2} "numFormat" 0, "Numbers (0, 1, 2 ...)", 1, "Letters A, B ... Z, AA, AB", 2, "Letters a, b ... z, aa, ab"
           values "padding" range [0, 12]
-          EOF
-
-          cat > "$D/scripts/ui.gdl" <<'EOF'
-          ui_dialog "AutoNumber Text", 360, 500
-
-          ui_outfield "Number = this object's Element ID (set via Tags and Categories), or type your own.", 12, 8, 336, 30
-          ui_separator 12, 44, 348, 44
-
-          ui_outfield "Number source", 12, 62, 116, 20
-          ui_infield "numSource", 132, 58, 216, 24
-          ui_outfield "Manual number", 12, 94, 116, 20
-          ui_infield "manualNum", 132, 90, 216, 24
-          ui_outfield "Number format", 12, 126, 116, 20
-          ui_infield "numFormat", 132, 122, 216, 24
-          ui_outfield "Zero padding", 12, 158, 116, 20
-          ui_infield "padding", 132, 154, 216, 24
-          ui_separator 12, 188, 348, 188
-
-          ui_outfield "Font", 12, 206, 116, 20
-          ui_infield "txtFont", 132, 202, 216, 24
-          ui_outfield "Style", 12, 238, 116, 20
-          ui_infield "txtStyle", 132, 234, 216, 24
-          ui_outfield "Size (mm on paper)", 12, 270, 116, 20
-          ui_infield "txtSize", 132, 266, 216, 24
-          ui_outfield "Text pen", 12, 302, 116, 20
-          ui_infield "txtPen", 132, 298, 216, 24
-          ui_separator 12, 332, 348, 332
-
-          ui_outfield "Text before number", 12, 350, 116, 20
-          ui_infield "prefix", 132, 346, 216, 24
-          ui_outfield "Text after number", 12, 382, 116, 20
-          ui_infield "suffix", 132, 378, 216, 24
-          ui_separator 12, 412, 348, 412
-
-          ui_outfield "Frame", 12, 430, 110, 20
-          ui_infield "frameType", 132, 426, 216, 24
-          ui_outfield "Frame size / pen", 12, 462, 116, 20
-          ui_infield "frameSize", 132, 458, 104, 24
-          ui_infield "framePen", 244, 458, 104, 24
           EOF
 
           cat > "$D/scripts/3d.gdl" <<'EOF'
