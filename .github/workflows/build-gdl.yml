@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Write the library part source (HSF)
         run: |
-          D=gdl_src/AutoNumberText
+          D=gdl_src/AutoNumberText2
           mkdir -p "$D/scripts"
 
           cat > "$D/ancestry.xml" <<'EOF'
@@ -36,7 +36,7 @@ jobs:
           <?xml version="1.0" encoding="UTF-8"?>
           <LibpartData Owner="1196638531" Signature="1196644685" Version="46">
           	<Identification>
-          		<MainGUID>E7B5D476-6A03-46A1-B1A3-5A779219608C</MainGUID>
+          		<MainGUID>8269B798-5C8E-48EC-8B0F-43B94A9876A9</MainGUID>
           		<IsPlaceable>true</IsPlaceable>
           		<IsArchivable>false</IsArchivable>
           		<MigrationValue>Normal</MigrationValue>
@@ -335,7 +335,7 @@ jobs:
           for %%V in (28 29 27 26) do call :probe %%V
           if not defined LPX goto :nolpx
           echo Using: %LPX%
-          if not exist "%~dp0src\AutoNumberText\paramlist.xml" goto :nosrc
+          if not exist "%~dp0src\AutoNumberText2\paramlist.xml" goto :nosrc
           if exist "%~dp0out" rmdir /s /q "%~dp0out"
           mkdir "%~dp0out"
           set "OK="
@@ -348,6 +348,7 @@ jobs:
           for /d %%D in ("%ACDIR%\Archicad Library*") do if not defined LIB set "LIB=%%~fD"
           if not defined LIB goto :fallback
           mkdir "%LIB%\AutoNumberText" 2>nul
+          del /q "%LIB%\AutoNumberText\*.gsm" 2>nul
           copy /y "%~dp0out\*.gsm" "%LIB%\AutoNumberText\" >nul
           if errorlevel 1 goto :fallback
           echo.
@@ -358,6 +359,7 @@ jobs:
           :fallback
           set "LIB=%USERPROFILE%\Documents\GRAPHISOFT\AutoNumberText Library"
           mkdir "%LIB%" 2>nul
+          del /q "%LIB%\*.gsm" 2>nul
           copy /y "%~dp0out\*.gsm" "%LIB%\" >nul
           echo.
           echo Could not write into Archicad's own folder. Right-click this file and choose Run as administrator to install there.
@@ -382,7 +384,7 @@ jobs:
           echo Trying library format %1 ...
           if exist "%~dp0work" rmdir /s /q "%~dp0work"
           xcopy /e /i /y /q "%~dp0src" "%~dp0work" >nul
-          powershell -NoProfile -Command "$p='%~dp0work\AutoNumberText\libpartdata.xml'; $t=Get-Content -Raw $p; $t=$t -replace 'Version=.46.',('Version={0}{1}{0}' -f [char]34,'%1'); Set-Content -NoNewline -Path $p -Value $t"
+          powershell -NoProfile -Command "$p='%~dp0work\AutoNumberText2\libpartdata.xml'; $t=Get-Content -Raw $p; $t=$t -replace 'Version=.46.',('Version={0}{1}{0}' -f [char]34,'%1'); Set-Content -NoNewline -Path $p -Value $t"
           del /q "%~dp0out\*.gsm" 2>nul
           "%LPX%" hsf2l "%~dp0work" "%~dp0out"
           if exist "%~dp0out\*.gsm" set "OK=%1"
