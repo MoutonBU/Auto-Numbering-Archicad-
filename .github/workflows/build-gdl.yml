@@ -287,6 +287,22 @@ jobs:
           		poly2_b 4, 2, fillPen, fillPen, \
           			-_hw, -_hh, 1, _hw, -_hh, 1, _hw, _hh, 1, -_hw, _hh, 1
           	endif
+          	pen fillPen
+          	_st = 0.3 * GLOB_SCALE / 1000
+          	if frameType = 1 then
+          		_rr = _hw
+          		if _hh > _rr then
+          			_rr = _hh
+          		endif
+          		for _y = -_rr to _rr step _st
+          			_w = sqr(_rr * _rr - _y * _y)
+          			line2 -_w, _y, _w, _y
+          		next _y
+          	else
+          		for _y = -_hh to _hh step _st
+          			line2 -_hw, _y, _hw, _y
+          		next _y
+          	endif
           endif
           if frameType = 1 then
           	pen framePen
