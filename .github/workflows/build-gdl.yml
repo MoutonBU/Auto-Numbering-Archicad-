@@ -319,50 +319,59 @@ jobs:
           cat > pack/BUILD_GSM.bat <<'EOF'
           @echo off
           setlocal
-          net session >nul 2>&1
-          if errorlevel 1 (
-            echo Asking for administrator rights...
-            powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
-            exit /b
-          )
+          cd /d "%~dp0"
+          echo === AutoNumber Text installer ===
           set "LPX="
           set "ACDIR="
-          for %%V in (28 29 27 26) do if not defined LPX if exist "%ProgramFiles%\GRAPHISOFT\Archicad %%V\LP_XMLConverter.exe" (
-            set "LPX=%ProgramFiles%\GRAPHISOFT\Archicad %%V\LP_XMLConverter.exe"
-            set "ACDIR=%ProgramFiles%\GRAPHISOFT\Archicad %%V"
-          )
-          if not defined LPX (
-            echo Could not find LP_XMLConverter.exe in your Archicad folder.
-            pause
-            exit /b 1
-          )
+          for %%V in (28 29 27 26) do call :probe %%V
+          if not defined LPX goto :nolpx
           echo Using: %LPX%
-          set "OUT=%~dp0out"
-          if exist "%OUT%" rmdir /s /q "%OUT%"
-          mkdir "%OUT%"
-          "%LPX%" hsf2l "%~dp0src" "%OUT%"
+          if not exist "%~dp0src\AutoNumberText\paramlist.xml" goto :nosrc
+          if exist "%~dp0out" rmdir /s /q "%~dp0out"
+          mkdir "%~dp0out"
+          "%LPX%" hsf2l "%~dp0src" "%~dp0out"
+          if errorlevel 1 goto :convfail
           set "LIB="
           for /d %%D in ("%ACDIR%\Archicad Library*") do if not defined LIB set "LIB=%%~fD"
-          set "FALLBACK=0"
-          if not defined LIB (
-            set "FALLBACK=1"
-            set "LIB=%USERPROFILE%\Documents\GRAPHISOFT\AutoNumberText Library"
-          )
+          if not defined LIB goto :fallback
           mkdir "%LIB%\AutoNumberText" 2>nul
-          copy /y "%OUT%\*.gsm" "%LIB%\AutoNumberText\" >nul
-          if errorlevel 1 (
-            echo Copy failed. The built file is in: %OUT%
-            pause
-            exit /b 1
-          )
+          copy /y "%~dp0out\*.gsm" "%LIB%\AutoNumberText\" >nul
+          if errorlevel 1 goto :fallback
           echo.
-          echo Installed to: %LIB%\AutoNumberText
-          if "%FALLBACK%"=="1" (
-            echo Archicad's library folder was not found. In Archicad: File - Libraries and Objects - Library Manager - Add, pick:
-            echo %LIB%
-          ) else (
-            echo In Archicad: File - Libraries and Objects - Library Manager - Reload Libraries. Then find AutoNumberText in the Object tool.
-          )
+          echo INSTALLED to: %LIB%\AutoNumberText
+          echo Now in Archicad: File - Libraries and Objects - Library Manager - Reload Libraries.
+          goto :end
+
+          :fallback
+          set "LIB=%USERPROFILE%\Documents\GRAPHISOFT\AutoNumberText Library"
+          mkdir "%LIB%" 2>nul
+          copy /y "%~dp0out\*.gsm" "%LIB%\" >nul
+          echo.
+          echo Could not write into Archicad's own folder. Right-click this file and choose Run as administrator to install there.
+          echo For now it was saved to: %LIB%
+          echo In Archicad: File - Libraries and Objects - Library Manager - Add Library - pick that folder.
+          goto :end
+
+          :nolpx
+          echo Could not find LP_XMLConverter.exe in C:\Program Files\GRAPHISOFT\Archicad 28.
+          goto :end
+
+          :nosrc
+          echo The src folder is missing. Extract the WHOLE zip first, then run this file from the extracted folder.
+          goto :end
+
+          :convfail
+          echo The converter reported an error (see above).
+          goto :end
+
+          :probe
+          if defined LPX goto :eof
+          if exist "%ProgramFiles%\GRAPHISOFT\Archicad %1\LP_XMLConverter.exe" set "LPX=%ProgramFiles%\GRAPHISOFT\Archicad %1\LP_XMLConverter.exe"
+          if defined LPX set "ACDIR=%ProgramFiles%\GRAPHISOFT\Archicad %1"
+          goto :eof
+
+          :end
+          echo.
           pause
           EOF
           sed -i 's/$/\r/' pack/BUILD_GSM.bat
