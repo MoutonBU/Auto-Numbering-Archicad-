@@ -1,3 +1,7 @@
+#if defined (_MSC_VER)
+#pragma warning (disable : 4127)   // 'conditional expression is constant' - the settings below are constants on purpose
+#endif
+
 // AutoNumber - Archicad Add-On
 // ---------------------------------------------------------------------------
 // TEXT TOOL AUTO-NUMBERING
