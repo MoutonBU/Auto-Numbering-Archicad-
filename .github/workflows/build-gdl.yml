@@ -197,14 +197,16 @@ jobs:
 
           find gdl_src -type f
 
-      - name: Download Archicad 28 DevKit (for LP_XMLConverter)
+      - name: Download LP_XMLConverter (Archicad 29 build)
         run: |
-          curl -L --fail -o devkit.zip "https://github.com/GRAPHISOFT/archicad-api-devkit/releases/download/28.4001/API.Development.Kit.WIN.28.4001.zip"
-          7z x devkit.zip -oDevKit -y > /dev/null
-          LP=$(find DevKit -iname LP_XMLConverter.exe | head -1)
-          echo "Found converter: $LP"
-          test -n "$LP"
-          echo "LP=$LP" >> "$GITHUB_ENV"
+          curl -L --fail -o lp.zip "https://github.com/GRAPHISOFT/archicad-api-devkit/releases/download/29.3000/LP_XMLConverter.WIN.29.3000.zip"
+          7z x lp.zip -oLP -y > /dev/null
+          EXE=$(find LP -iname LP_XMLConverter.exe | head -1)
+          echo "Found converter: $EXE"
+          test -n "$EXE"
+          echo "LP=$EXE" >> "$GITHUB_ENV"
+          echo "---- converter usage ----"
+          "$EXE" 2>&1 | head -80 || true
 
       - name: Compile the library part (.gsm)
         run: |
