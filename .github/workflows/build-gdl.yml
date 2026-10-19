@@ -294,7 +294,7 @@ jobs:
           			-_hw, -_hh, 1, _hw, -_hh, 1, _hw, _hh, 1, -_hw, _hh, 1
           	endif
           	pen fillPen
-          	_st = 0.1 * GLOB_SCALE / 1000
+          	_st = 0.04 * GLOB_SCALE / 1000
           	if frameType = 1 then
           		_rr = _hw
           		if _hh > _rr then
