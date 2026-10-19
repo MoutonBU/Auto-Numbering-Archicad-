@@ -339,7 +339,9 @@ jobs:
           if exist "%~dp0out" rmdir /s /q "%~dp0out"
           mkdir "%~dp0out"
           set "OK="
+          if exist "%~dp0build_log.txt" del "%~dp0build_log.txt"
           for %%N in (46 45 44 43 42 41 40 39 38 37 36) do if not defined OK call :try %%N
+          type "%~dp0build_log.txt"
           if not defined OK goto :convfail
           echo.
           echo Built OK with library format %OK%.
@@ -376,7 +378,7 @@ jobs:
           goto :end
 
           :convfail
-          echo The converter could not build it with any library format (see messages above). Please send me a screenshot of this window.
+          echo The converter could not build it with any library format. The messages are above and saved in build_log.txt next to this file. Send me a screenshot of this window.
           goto :end
 
           :try
@@ -386,7 +388,8 @@ jobs:
           xcopy /e /i /y /q "%~dp0src" "%~dp0work" >nul
           powershell -NoProfile -Command "$p='%~dp0work\AutoNumberText2\libpartdata.xml'; $t=Get-Content -Raw $p; $t=$t -replace 'Version=.46.',('Version={0}{1}{0}' -f [char]34,'%1'); Set-Content -NoNewline -Path $p -Value $t"
           del /q "%~dp0out\*.gsm" 2>nul
-          "%LPX%" hsf2l "%~dp0work" "%~dp0out"
+          echo Format %1 >> "%~dp0build_log.txt"
+          "%LPX%" hsf2l "%~dp0work" "%~dp0out" >> "%~dp0build_log.txt" 2>&1
           if exist "%~dp0out\*.gsm" set "OK=%1"
           goto :eof
 
