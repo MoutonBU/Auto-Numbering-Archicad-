@@ -130,7 +130,7 @@ jobs:
           		</RealNum>
           		<String Name="txtFont">
           			<Description><![CDATA["Font"]]></Description>
-          			<Value><![CDATA[Arial]]></Value>
+          			<Value><![CDATA["Arial"]]></Value>
           		</String>
           		<Boolean Name="txtBold">
           			<Description><![CDATA["Bold"]]></Description>
@@ -142,11 +142,11 @@ jobs:
           		</PenColor>
           		<String Name="prefix">
           			<Description><![CDATA["Text before the number"]]></Description>
-          			<Value><![CDATA[]]></Value>
+          			<Value><![CDATA[""]]></Value>
           		</String>
           		<String Name="suffix">
           			<Description><![CDATA["Text after the number"]]></Description>
-          			<Value><![CDATA[]]></Value>
+          			<Value><![CDATA[""]]></Value>
           		</String>
           		<Integer Name="frameType">
           			<Description><![CDATA["Frame (0 none, 1 circle, 2 square)"]]></Description>
