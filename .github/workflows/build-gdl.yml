@@ -272,6 +272,37 @@ jobs:
           "$LP" hsf2l "$(cygpath -w "$PWD/gdl_src")" "$(cygpath -w "$PWD/gdl_out")"
           ls -la gdl_out
 
+      - name: Package the source with a local builder (uses YOUR Archicad's own converter)
+        run: |
+          mkdir -p pack
+          cp -r gdl_src pack/src
+          cat > pack/BUILD_GSM.bat <<'EOF'
+          @echo off
+          setlocal
+          set "LPX="
+          for %%V in (28 29 27 26) do if not defined LPX if exist "%ProgramFiles%\GRAPHISOFT\Archicad %%V\LP_XMLConverter.exe" set "LPX=%ProgramFiles%\GRAPHISOFT\Archicad %%V\LP_XMLConverter.exe"
+          if not defined LPX (
+            echo Could not find LP_XMLConverter.exe in your Archicad folder.
+            pause
+            exit /b 1
+          )
+          echo Using: %LPX%
+          if not exist "%~dp0out" mkdir "%~dp0out"
+          "%LPX%" hsf2l "%~dp0src" "%~dp0out"
+          echo.
+          echo Done. Add the .gsm from the out folder in Archicad Library Manager.
+          pause
+          EOF
+          sed -i 's/$/\r/' pack/BUILD_GSM.bat
+          find pack -type f
+
+      - name: Upload source and builder
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoNumberText-source-and-builder
+          path: pack
+          if-no-files-found: error
+
       - name: Upload the library part
         uses: actions/upload-artifact@v4
         with:
