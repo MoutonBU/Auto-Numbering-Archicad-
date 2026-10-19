@@ -306,6 +306,14 @@ jobs:
 
           find gdl_src -type f
 
+      - name: Make GDL scripts Windows-friendly (CRLF line ends + UTF-8 BOM)
+        run: |
+          for f in gdl_src/AutoNumberText2/scripts/*.gdl; do
+            sed -i 's/\r$//; s/$/\r/' "$f"
+            { printf '\xEF\xBB\xBF'; cat "$f"; } > "$f.tmp" && mv "$f.tmp" "$f"
+          done
+          head -c 60 gdl_src/AutoNumberText2/scripts/2d.gdl | od -c | head -4
+
       - name: Download LP_XMLConverter
         run: |
           curl -L --fail -o lp.zip "https://github.com/GRAPHISOFT/archicad-api-devkit/releases/download/29.3000/LP_XMLConverter.WIN.29.3000.zip"
