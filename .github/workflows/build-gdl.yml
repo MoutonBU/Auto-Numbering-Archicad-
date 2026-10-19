@@ -142,6 +142,22 @@ jobs:
           			<Description><![CDATA["Text pen"]]></Description>
           			<Value>1</Value>
           		</PenColor>
+          		<Integer Name="numSource">
+          			<Description><![CDATA["Number source"]]></Description>
+          			<Value>0</Value>
+          		</Integer>
+          		<Integer Name="manualNum">
+          			<Description><![CDATA["Manual number"]]></Description>
+          			<Value>1</Value>
+          		</Integer>
+          		<Integer Name="numFormat">
+          			<Description><![CDATA["Number format"]]></Description>
+          			<Value>0</Value>
+          		</Integer>
+          		<Integer Name="padding">
+          			<Description><![CDATA["Zero padding (digits)"]]></Description>
+          			<Value>0</Value>
+          		</Integer>
           		<String Name="prefix">
           			<Description><![CDATA["Text before the number"]]></Description>
           			<Value><![CDATA[""]]></Value>
@@ -168,9 +184,41 @@ jobs:
 
           cat > "$D/scripts/2d.gdl" <<'EOF'
           ! AutoNumber Text: shows this object's own Element ID as text
+          ! 1) read the number from the Element ID (digits only), or use the manual number
           n = GLOB_ID
-          if n = "" then n = "?"
-          txt = prefix + n + suffix
+          idn = ""
+          for i = 1 to strlen(n)
+          	c = strsub(n, i, 1)
+          	if c >= "0" & c <= "9" then idn = idn + c
+          next i
+          num = 0
+          if idn <> "" then num = val(idn)
+          if numSource = 1 then num = manualNum
+          if num < 0 then num = 0
+
+          ! 2) format: numbers (0 to 100000000+) or letters A..Z, AA, AB ...
+          body = ""
+          if numFormat = 0 then
+          	body = str(num, 1, 0)
+          	while strlen(body) < padding do
+          		body = "0" + body
+          	endwhile
+          else
+          	alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          	if numFormat = 2 then alpha = "abcdefghijklmnopqrstuvwxyz"
+          	if num = 0 then
+          		body = "0"
+          	else
+          		v = num
+          		while v > 0 do
+          			r = (v - 1) - 26 * int((v - 1) / 26)
+          			body = strsub(alpha, r + 1, 1) + body
+          			v = int((v - 1) / 26)
+          		endwhile
+          	endif
+          endif
+          if n = "" & numSource = 0 then body = "?"
+          txt = prefix + body + suffix
 
           r = frameSize * GLOB_SCALE / 1000
 
@@ -197,35 +245,49 @@ jobs:
           values{2} "frameType" 0, "No frame", 1, "Circle", 2, "Square"
           values "txtSize" range [0.5, 50]
           values "frameSize" range [0.5, 100]
+          values{2} "numSource" 0, "Element ID (auto)", 1, "Manual number"
+          values "manualNum" range [0, 100000000]
+          values{2} "numFormat" 0, "Numbers (0, 1, 2 ...)", 1, "Letters A, B ... Z, AA, AB", 2, "Letters a, b ... z, aa, ab"
+          values "padding" range [0, 12]
           EOF
 
           cat > "$D/scripts/ui.gdl" <<'EOF'
-          ui_dialog "AutoNumber Text", 360, 318
+          ui_dialog "AutoNumber Text", 360, 500
 
-          ui_outfield "Shows this object's Element ID as text. Set the ID in Tags and Categories.", 12, 8, 336, 30
+          ui_outfield "Number = this object's Element ID (set via Tags and Categories), or type your own.", 12, 8, 336, 30
           ui_separator 12, 44, 348, 44
 
-          ui_outfield "Font", 12, 58, 110, 20
-          ui_infield "txtFont", 132, 54, 216, 24
-          ui_outfield "Style", 12, 90, 110, 20
-          ui_infield "txtStyle", 132, 86, 216, 24
-          ui_outfield "Size (mm on paper)", 12, 122, 116, 20
-          ui_infield "txtSize", 132, 118, 216, 24
-          ui_outfield "Text pen", 12, 154, 110, 20
-          ui_infield "txtPen", 132, 150, 216, 24
-          ui_separator 12, 184, 348, 184
+          ui_outfield "Number source", 12, 62, 116, 20
+          ui_infield "numSource", 132, 58, 216, 24
+          ui_outfield "Manual number", 12, 94, 116, 20
+          ui_infield "manualNum", 132, 90, 216, 24
+          ui_outfield "Number format", 12, 126, 116, 20
+          ui_infield "numFormat", 132, 122, 216, 24
+          ui_outfield "Zero padding", 12, 158, 116, 20
+          ui_infield "padding", 132, 154, 216, 24
+          ui_separator 12, 188, 348, 188
 
-          ui_outfield "Text before number", 12, 198, 116, 20
-          ui_infield "prefix", 132, 194, 216, 24
-          ui_outfield "Text after number", 12, 230, 116, 20
-          ui_infield "suffix", 132, 226, 216, 24
-          ui_separator 12, 260, 348, 260
+          ui_outfield "Font", 12, 206, 116, 20
+          ui_infield "txtFont", 132, 202, 216, 24
+          ui_outfield "Style", 12, 238, 116, 20
+          ui_infield "txtStyle", 132, 234, 216, 24
+          ui_outfield "Size (mm on paper)", 12, 270, 116, 20
+          ui_infield "txtSize", 132, 266, 216, 24
+          ui_outfield "Text pen", 12, 302, 116, 20
+          ui_infield "txtPen", 132, 298, 216, 24
+          ui_separator 12, 332, 348, 332
 
-          ui_outfield "Frame", 12, 274, 110, 20
-          ui_infield "frameType", 132, 270, 216, 24
-          ui_outfield "Frame size / pen", 12, 304, 116, 20
-          ui_infield "frameSize", 132, 300, 104, 24
-          ui_infield "framePen", 244, 300, 104, 24
+          ui_outfield "Text before number", 12, 350, 116, 20
+          ui_infield "prefix", 132, 346, 216, 24
+          ui_outfield "Text after number", 12, 382, 116, 20
+          ui_infield "suffix", 132, 378, 216, 24
+          ui_separator 12, 412, 348, 412
+
+          ui_outfield "Frame", 12, 430, 110, 20
+          ui_infield "frameType", 132, 426, 216, 24
+          ui_outfield "Frame size / pen", 12, 462, 116, 20
+          ui_infield "frameSize", 132, 458, 104, 24
+          ui_infield "framePen", 244, 458, 104, 24
           EOF
 
           cat > "$D/scripts/3d.gdl" <<'EOF'
