@@ -186,6 +186,10 @@ jobs:
           			<Description><![CDATA["15. Fill: pen (color)"]]></Description>
           			<Value>3</Value>
           		</PenColor>
+          		<FillPattern Name="fillPat">
+          			<Description><![CDATA["16. Fill: pattern"]]></Description>
+          			<Value>1</Value>
+          		</FillPattern>
           	</Parameters>
           </ParamSection>
           EOF
@@ -265,16 +269,23 @@ jobs:
 
           _r2 = frameSize * GLOB_SCALE / 1000
           if fillType = 1 then
-          	define fill "anum_solid" 255, 255, 255, 255, 255, 255, 255, 255
-          	fill "anum_solid"
+          	_hw = (strlen(_txt) * txtSize * 0.6 / 2 + 1.5) * GLOB_SCALE / 1000
+          	if _hw < _r2 then
+          		_hw = _r2
+          	endif
+          	_hh = (txtSize * 0.8 + 1) * GLOB_SCALE / 1000
+          	if _hh < _r2 then
+          		_hh = _r2
+          	endif
+          	fill fillPat
           	if frameType = 1 then
           		for _a = 0 to 345 step 15
-          			put _r2 * cos(_a), _r2 * sin(_a), 1
+          			put _hw * cos(_a), _hw * sin(_a), 1
           		next _a
           		poly2_b 24, 2, fillPen, fillPen, get(nsp)
           	else
           		poly2_b 4, 2, fillPen, fillPen, \
-          			-_r2, -_r2, 1, _r2, -_r2, 1, _r2, _r2, 1, -_r2, _r2, 1
+          			-_hw, -_hh, 1, _hw, -_hh, 1, _hw, _hh, 1, -_hw, _hh, 1
           	endif
           endif
           if frameType = 1 then
@@ -313,7 +324,7 @@ jobs:
           EOF
 
           cat > "$D/scripts/ui.gdl" <<'EOF'
-          ui_dialog "AutoNumber Text", 360, 580
+          ui_dialog "AutoNumber Text", 360, 612
 
           ui_outfield "Number comes from the Element ID, or type your own.", 12, 8, 336, 30
           ui_separator 12, 44, 348, 44
@@ -354,6 +365,8 @@ jobs:
           ui_infield "fillType", 132, 502, 216, 24
           ui_outfield "Fill pen (color)", 12, 538, 116, 20
           ui_infield "fillPen", 132, 534, 216, 24
+          ui_outfield "Fill pattern", 12, 570, 116, 20
+          ui_infield "fillPat", 132, 566, 216, 24
           EOF
 
           cat > "$D/scripts/3d.gdl" <<'EOF'
