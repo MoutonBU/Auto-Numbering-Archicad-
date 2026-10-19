@@ -184,6 +184,12 @@ jobs:
 
           cat > "$D/scripts/2d.gdl" <<'EOF'
           ! AutoNumber Text - shows a number/letter taken from the object's Element ID
+          ! --- diagnostic marks: a square and text must appear ---
+          _u = GLOB_SCALE / 1000
+          pen 1
+          rect2 -2 * _u, -2 * _u, 2 * _u, 2 * _u
+          text2 0, -4 * _u, "TEST"
+
           _id = GLOB_ID
           _digits = ""
           _len = strlen(_id)
@@ -221,6 +227,9 @@ jobs:
           endif
           if strlen(_id) = 0 & numSource = 0 then _body = "?"
           _txt = prefix + _body + suffix
+
+          ! plain-style copy of the number (no custom style) above the square
+          text2 0, 4 * _u, _txt
 
           _r2 = frameSize * GLOB_SCALE / 1000
           if frameType = 1 then
