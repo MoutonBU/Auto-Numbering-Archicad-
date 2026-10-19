@@ -338,8 +338,12 @@ jobs:
           if not exist "%~dp0src\AutoNumberText\paramlist.xml" goto :nosrc
           if exist "%~dp0out" rmdir /s /q "%~dp0out"
           mkdir "%~dp0out"
-          "%LPX%" hsf2l "%~dp0src" "%~dp0out"
-          if errorlevel 1 goto :convfail
+          set "OK="
+          for %%N in (46 45 44 43 42 41 40 39 38 37 36) do if not defined OK call :try %%N
+          if not defined OK goto :convfail
+          echo.
+          echo Built OK with library format %OK%.
+
           set "LIB="
           for /d %%D in ("%ACDIR%\Archicad Library*") do if not defined LIB set "LIB=%%~fD"
           if not defined LIB goto :fallback
@@ -370,8 +374,20 @@ jobs:
           goto :end
 
           :convfail
-          echo The converter reported an error (see above).
+          echo The converter could not build it with any library format (see messages above). Please send me a screenshot of this window.
           goto :end
+
+          :try
+          echo.
+          echo Trying library format %1 ...
+          if exist "%~dp0work" rmdir /s /q "%~dp0work"
+          xcopy /e /i /y /q "%~dp0src" "%~dp0work" >nul
+          powershell -NoProfile -Command "$p='%~dp0work\AutoNumberText\libpartdata.xml'; $t=Get-Content -Raw $p; $t=$t -replace 'Version=.46.',('Version={0}{1}{0}' -f [char]34,'%1'); Set-Content -NoNewline -Path $p -Value $t"
+          del /q "%~dp0out\*.gsm" 2>nul
+          "%LPX%" hsf2l "%~dp0work" "%~dp0out"
+          if exist "%~dp0out\*.gsm" set "OK=%1"
+          goto :eof
+
 
           :probe
           if defined LPX goto :eof
