@@ -46,6 +46,7 @@ jobs:
           	<CalledMacros SectVersion="2" SectionFlags="0" SubIdent="0"/>
           	<Script_3D SectVersion="20" SectionFlags="0" SubIdent="0"/>
           	<Script_2D SectVersion="20" SectionFlags="0" SubIdent="0"/>
+          	<Script_UI SectVersion="20" SectionFlags="0" SubIdent="0"/>
           	<Script_VL SectVersion="20" SectionFlags="0" SubIdent="0"/>
           	<ParamSection SectVersion="27" SectionFlags="0" SubIdent="0"/>
           	<Copyright SectVersion="1" SectionFlags="0" SubIdent="0"/>
@@ -249,6 +250,45 @@ jobs:
           values "manualNum" range [0, 100000000]
           values{2} "numFormat" 0, "Numbers (0, 1, 2 ...)", 1, "Letters A, B ... Z, AA, AB", 2, "Letters a, b ... z, aa, ab"
           values "numPad" range [0, 12]
+          EOF
+
+          cat > "$D/scripts/ui.gdl" <<'EOF'
+          ui_dialog "AutoNumber Text", 360, 500
+
+          ui_outfield "Number comes from the Element ID, or type your own.", 12, 8, 336, 30
+          ui_separator 12, 44, 348, 44
+
+          ui_outfield "Number source", 12, 62, 116, 20
+          ui_infield "numSource", 132, 58, 216, 24
+          ui_outfield "Manual number", 12, 94, 116, 20
+          ui_infield "manualNum", 132, 90, 216, 24
+          ui_outfield "Number format", 12, 126, 116, 20
+          ui_infield "numFormat", 132, 122, 216, 24
+          ui_outfield "Zero padding", 12, 158, 116, 20
+          ui_infield "numPad", 132, 154, 216, 24
+          ui_separator 12, 188, 348, 188
+
+          ui_outfield "Font (dropdown)", 12, 206, 116, 20
+          ui_infield "txtFont", 132, 202, 216, 24
+          ui_outfield "Style", 12, 238, 116, 20
+          ui_infield "txtStyle", 132, 234, 216, 24
+          ui_outfield "Size (mm on paper)", 12, 270, 116, 20
+          ui_infield "txtSize", 132, 266, 216, 24
+          ui_outfield "Text pen", 12, 302, 116, 20
+          ui_infield "txtPen", 132, 298, 216, 24
+          ui_separator 12, 332, 348, 332
+
+          ui_outfield "Text before number", 12, 350, 116, 20
+          ui_infield "prefix", 132, 346, 216, 24
+          ui_outfield "Text after number", 12, 382, 116, 20
+          ui_infield "suffix", 132, 378, 216, 24
+          ui_separator 12, 412, 348, 412
+
+          ui_outfield "Frame", 12, 430, 110, 20
+          ui_infield "frameType", 132, 426, 216, 24
+          ui_outfield "Frame size / pen", 12, 462, 116, 20
+          ui_infield "frameSize", 132, 458, 104, 24
+          ui_infield "framePen", 244, 458, 104, 24
           EOF
 
           cat > "$D/scripts/3d.gdl" <<'EOF'
