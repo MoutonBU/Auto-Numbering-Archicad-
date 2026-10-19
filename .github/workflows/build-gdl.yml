@@ -250,7 +250,12 @@ jobs:
           EOF
 
           cat > "$D/scripts/vl.gdl" <<'EOF'
-          values "txtFont" "Arial", "Arial Black", "Arial Narrow", "Bahnschrift", "Calibri", "Cambria", "Candara", "Century Gothic", "Comic Sans MS", "Consolas", "Courier New", "Franklin Gothic Medium", "Gabriola", "Georgia", "Impact", "Lucida Console", "Palatino Linotype", "Segoe UI", "Segoe Print", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana", "Helvetica"
+          values "txtFont" "Arial", "Arial Black", "Arial Narrow", "Bahnschrift", \
+          "Calibri", "Cambria", "Candara", "Century Gothic", \
+          "Comic Sans MS", "Consolas", "Courier New", "Franklin Gothic Medium", \
+          "Gabriola", "Georgia", "Impact", "Lucida Console", \
+          "Palatino Linotype", "Segoe UI", "Segoe Print", "Tahoma", \
+          "Times New Roman", "Trebuchet MS", "Verdana", "Helvetica"
           values{2} "txtStyle" 0, "Regular", 1, "Bold", 2, "Italic", 3, "Bold Italic", 4, "Underline"
           values{2} "frameType" 0, "No frame", 1, "Circle", 2, "Square"
           values "txtSize" range [0.5, 50]
