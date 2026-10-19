@@ -194,16 +194,21 @@ jobs:
           _digits = ""
           _len = strlen(_id)
           _i = 1
+          _num = 0
           while _i <= _len do
           	_ch = strsub(_id, _i, 1)
-          	if _ch = "0" | _ch = "1" | _ch = "2" | _ch = "3" | _ch = "4" | _ch = "5" | _ch = "6" | _ch = "7" | _ch = "8" | _ch = "9" then _digits = _digits + _ch
+          	_p = strstr("0123456789", _ch)
+          	if _p > 0 then
+          		_num = _num * 10 + _p - 1
+          	endif
           	_i = _i + 1
           endwhile
-
-          _num = 0
-          if strlen(_digits) > 0 then _num = val(_digits)
-          if numSource = 1 then _num = manualNum
-          if _num < 0 then _num = 0
+          if numSource = 1 then
+          	_num = manualNum
+          endif
+          if _num < 0 then
+          	_num = 0
+          endif
 
           _body = ""
           if numFormat = 0 then
@@ -213,7 +218,9 @@ jobs:
           	endwhile
           else
           	_abc = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-          	if numFormat = 2 then _abc = "abcdefghijklmnopqrstuvwxyz"
+          	if numFormat = 2 then
+          		_abc = "abcdefghijklmnopqrstuvwxyz"
+          	endif
           	if _num = 0 then
           		_body = "0"
           	else
@@ -225,7 +232,9 @@ jobs:
           		endwhile
           	endif
           endif
-          if strlen(_id) = 0 & numSource = 0 then _body = "?"
+          if strlen(_id) = 0 & numSource = 0 then
+          	_body = "?"
+          endif
           _txt = prefix + _body + suffix
 
           ! plain-style copy of the number (no custom style) above the square
