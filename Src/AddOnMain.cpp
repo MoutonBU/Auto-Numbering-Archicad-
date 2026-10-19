@@ -1,12 +1,19 @@
 // AutoNumber - Archicad Add-On
 // ---------------------------------------------------------------------------
-// When you place a new element, it receives the next number in its Element ID:
-// place one -> 1, place the next -> 2, and so on.
+// TEXT TOOL AUTO-NUMBERING
+//   Pick the Text tool, click, type a number (or just #) and finish the text.
+//     - first text:  keeps the number you typed (type 1 -> it stays 1)
+//     - next texts:  whatever you type, as long as it is a number or #,
+//                    becomes (highest existing number + 1)  ->  2, 3, 4 ...
+//   Text that is NOT a number or # (normal notes) is left alone.
 //
-// The next number is always "highest existing number + 1" across the numbered
-// element types, so undo, delete and copy/paste never leave the sequence stuck.
+// The sequence is read from the Text elements on the current floor plan /
+// view, so deleting or undoing never leaves the count stuck.
 //
-// Menu: Options (Tools) > Auto-Number Placed Elements  toggles it on/off (checkmark = on).
+// Menu: Auto-Number Placed Elements  toggles it on/off (checkmark = on).
+//
+// Optional: kNumberObjectIds = true also fills the Element ID of newly placed
+// Objects and Lamps with the next number.
 // ---------------------------------------------------------------------------
 
 #include "APIEnvir.h"
@@ -20,15 +27,11 @@
 #include <string>
 
 // ---- settings: edit these, rebuild ----------------------------------------
-static const char*  kPrefix  = "";       // e.g. "T-" gives T-1, T-2 ...
-static const int    kPadding = 0;        // 3 gives 001, 002 ...
-
-// Element types that get numbered. They share ONE running sequence.
-static const API_ElemTypeID kNumberedTypes[] = {
-	API_ObjectID,
-	API_LampID,
-};
-// Add more if you want, e.g. API_ColumnID, API_BeamID, API_WindowID, API_DoorID, API_ZoneID ...
+static const bool   kNumberText      = true;    // number the Text tool
+static const bool   kNumberObjectIds = false;   // also number Objects/Lamps (Element ID)
+static const char*  kPrefix          = "";      // e.g. "T-" gives T-1, T-2 ...
+static const int    kPadding         = 0;       // 3 gives 001, 002 ...
+static const long   kStartNumber     = 1;       // used when you type just "#" as the first one
 // ---------------------------------------------------------------------------
 
 static const GSResID AddOnInfoID			= ID_ADDON_INFO;
@@ -41,20 +44,130 @@ static const short AddOnMenuID				= ID_ADDON_MENU;
 static bool g_enabled = true;
 static bool g_busy    = false;     // stops our own edit from re-triggering us
 
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+static std::string Trim (const std::string& s)
+{
+	size_t a = 0, b = s.size ();
+	while (a < b && (s[a] == ' ' || s[a] == '\t' || s[a] == '\r' || s[a] == '\n')) a++;
+	while (b > a && (s[b - 1] == ' ' || s[b - 1] == '\t' || s[b - 1] == '\r' || s[b - 1] == '\n')) b--;
+	return s.substr (a, b - a);
+}
+
+// "<prefix><digits>" -> number
+static bool ParseNumber (const std::string& text, long& out)
+{
+	const std::string prefix (kPrefix);
+	const std::string t = Trim (text);
+	if (t.size () <= prefix.size () || t.compare (0, prefix.size (), prefix) != 0)
+		return false;
+	const std::string digits = t.substr (prefix.size ());
+	for (char c : digits) {
+		if (c < '0' || c > '9')
+			return false;
+	}
+	out = strtol (digits.c_str (), nullptr, 10);
+	return true;
+}
+
+static std::string FormatNumber (long n)
+{
+	std::string num = std::to_string (n);
+	while ((int) num.size () < kPadding)
+		num = "0" + num;
+	return std::string (kPrefix) + num;
+}
+
+// ---------------------------------------------------------------------------
+// Text tool numbering
+// ---------------------------------------------------------------------------
+static bool ReadTextContent (const API_Guid& guid, std::string& out)
+{
+	API_ElementMemo memo = {};
+	if (ACAPI_Element_GetMemo (guid, &memo, APIMemoMask_TextContent) != NoError)
+		return false;
+	out.clear ();
+	if (memo.textContent != nullptr)
+		out = memo.textContent->ToCStr ().Get ();
+	ACAPI_DisposeElemMemoHdls (&memo);
+	return true;
+}
+
+static GSErrCode WriteTextContent (const API_Guid& guid, const std::string& newText)
+{
+	API_Element element = {};
+	element.header.guid = guid;
+	GSErrCode err = ACAPI_Element_Get (&element);
+	if (err != NoError)
+		return err;
+
+	API_ElementMemo memo = {};
+	err = ACAPI_Element_GetMemo (guid, &memo, APIMemoMask_TextContent);
+	if (err != NoError)
+		return err;
+
+	if (memo.textContent != nullptr)
+		*memo.textContent = GS::UniString (newText.c_str ());
+	else
+		memo.textContent = new GS::UniString (newText.c_str ());
+
+	API_Element mask;
+	ACAPI_ELEMENT_MASK_CLEAR (mask);
+	ACAPI_ELEMENT_MASK_SET (mask, API_TextType, multiStyle);
+	element.text.multiStyle = false;           // plain text, so styles can't get out of step with the new content
+
+	err = ACAPI_Element_Change (&element, &mask, &memo, APIMemoMask_TextContent, true);
+	ACAPI_DisposeElemMemoHdls (&memo);
+	return err;
+}
+
+static GSErrCode HandleNewText (const API_Guid& guid)
+{
+	std::string typed;
+	if (!ReadTextContent (guid, typed))
+		return NoError;
+
+	const std::string trimmed = Trim (typed);
+	long typedNum = 0;
+	const bool isHash = (trimmed == "#");
+	const bool isNum  = ParseNumber (trimmed, typedNum);
+	if (!isHash && !isNum)
+		return NoError;                         // an ordinary note - leave it alone
+
+	// highest number among the OTHER text elements
+	long best = 0;
+	bool any = false;
+	GS::Array<API_Guid> list;
+	if (ACAPI_Element_GetElemList (API_TextID, &list) == NoError) {
+		for (const API_Guid& g : list) {
+			if (g == guid)
+				continue;
+			std::string content;
+			long n = 0;
+			if (ReadTextContent (g, content) && ParseNumber (content, n)) {
+				any = true;
+				if (n > best)
+					best = n;
+			}
+		}
+	}
+
+	const long target = any ? best + 1 : (isNum ? typedNum : kStartNumber);
+	const std::string wanted = FormatNumber (target);
+	if (wanted == trimmed)
+		return NoError;                         // already right
+
+	return WriteTextContent (guid, wanted);
+}
+
+// ---------------------------------------------------------------------------
+// optional: Element ID numbering for Objects and Lamps
+// ---------------------------------------------------------------------------
 static bool g_haveDef = false;
 static API_PropertyDefinition g_elemIdDef;
 
-// ---------------------------------------------------------------------------
-static bool IsNumberedType (const API_ElemType& type)
-{
-	for (API_ElemTypeID id : kNumberedTypes) {
-		if (type.typeID == id)
-			return true;
-	}
-	return false;
-}
-
-static std::string Normalize (const GS::UniString& s)
+static std::string NormalizeName (const GS::UniString& s)
 {
 	std::string in (s.ToCStr ().Get ());
 	std::string out;
@@ -65,19 +178,16 @@ static std::string Normalize (const GS::UniString& s)
 	return out;
 }
 
-// finds the built-in "General > Element ID" property definition (cached)
 static bool EnsureElemIdDefinition ()
 {
 	if (g_haveDef)
 		return true;
-
 	GS::Array<API_PropertyDefinition> defs;
 	if (ACAPI_Property_GetPropertyDefinitions (APINULLGuid, defs) != NoError)
 		return false;
-
 	for (const API_PropertyDefinition& d : defs) {
 		if (d.definitionType == API_PropertyStaticBuiltInDefinitionType &&
-		    Normalize (d.name) == "elementid") {
+		    NormalizeName (d.name) == "elementid") {
 			g_elemIdDef = d;
 			g_haveDef = true;
 			return true;
@@ -96,52 +206,32 @@ static std::string ReadElemId (const API_Guid& guid)
 	return std::string (prop.value.singleVariant.variant.uniStringValue.ToCStr ().Get ());
 }
 
-// highest number found (with our prefix) over all numbered types, ignoring 'skip'
-static long HighestExistingNumber (const API_Guid& skip)
+static GSErrCode HandleNewObject (const API_Guid& guid)
 {
-	const std::string prefix (kPrefix);
-	long best = 0;
+	if (!EnsureElemIdDefinition ())
+		return NoError;
 
-	for (API_ElemTypeID typeID : kNumberedTypes) {
+	long best = 0;
+	const API_ElemTypeID types[] = { API_ObjectID, API_LampID };
+	for (API_ElemTypeID typeID : types) {
 		GS::Array<API_Guid> list;
 		if (ACAPI_Element_GetElemList (typeID, &list) != NoError)
 			continue;
-
 		for (const API_Guid& g : list) {
-			if (g == skip)
+			if (g == guid)
 				continue;
-			const std::string id = ReadElemId (g);
-			if (id.size () <= prefix.size () || id.compare (0, prefix.size (), prefix) != 0)
-				continue;
-			const std::string digits = id.substr (prefix.size ());
-			char* end = nullptr;
-			const long n = strtol (digits.c_str (), &end, 10);
-			if (end != nullptr && *end == '\0' && n > best)
+			long n = 0;
+			if (ParseNumber (ReadElemId (g), n) && n > best)
 				best = n;
 		}
 	}
-	return best;
-}
-
-static std::string FormatNumber (long n)
-{
-	std::string num = std::to_string (n);
-	while ((int) num.size () < kPadding)
-		num = "0" + num;
-	return std::string (kPrefix) + num;
-}
-
-static GSErrCode AssignNumber (const API_Guid& guid)
-{
-	const long next = HighestExistingNumber (guid) + 1;
 
 	API_Property prop;
 	prop.definition = g_elemIdDef;
 	prop.isDefault = false;
 	prop.value.variantStatus = API_VariantStatusNormal;
 	prop.value.singleVariant.variant.type = API_PropertyStringValueType;
-	prop.value.singleVariant.variant.uniStringValue = GS::UniString (FormatNumber (next).c_str ());
-
+	prop.value.singleVariant.variant.uniStringValue = GS::UniString (FormatNumber (best + 1).c_str ());
 	return ACAPI_Element_SetProperty (guid, prop);
 }
 
@@ -154,17 +244,19 @@ static GSErrCode ElementEventHandler (const API_NotifyElementType* notif)
 		return NoError;
 	if (notif->notifID != APINotifyElement_New)
 		return NoError;
-	if (!IsNumberedType (notif->elemHead.type))
-		return NoError;
-	if (!EnsureElemIdDefinition ())
-		return NoError;
+
+	const API_ElemTypeID typeID = notif->elemHead.type.typeID;
+	GSErrCode err = NoError;
 
 	g_busy = true;
-	const GSErrCode err = AssignNumber (notif->elemHead.guid);
+	if (kNumberText && typeID == API_TextID)
+		err = HandleNewText (notif->elemHead.guid);
+	else if (kNumberObjectIds && (typeID == API_ObjectID || typeID == API_LampID))
+		err = HandleNewObject (notif->elemHead.guid);
 	g_busy = false;
 
 	if (err != NoError)
-		ACAPI_WriteReport ("AutoNumber: could not set Element ID (error %d)", false, (int) err);
+		ACAPI_WriteReport ("AutoNumber: could not update the new element (error %d)", false, (int) err);
 
 	return NoError;
 }
@@ -260,13 +352,22 @@ GSErrCode Initialize (void)
 
 	ApplyMenuCheckmark ();
 
-	// one handler per numbered type
-	for (API_ElemTypeID typeID : kNumberedTypes) {
+	if (kNumberText) {
 		API_ToolBoxItem item = {};
-		item.type.typeID = typeID;
+		item.type.typeID = API_TextID;
 		err = ACAPI_Element_CatchNewElement (&item, ElementEventHandler);
 		if (err != NoError)
 			return err;
+	}
+	if (kNumberObjectIds) {
+		const API_ElemTypeID types[] = { API_ObjectID, API_LampID };
+		for (API_ElemTypeID typeID : types) {
+			API_ToolBoxItem item = {};
+			item.type.typeID = typeID;
+			err = ACAPI_Element_CatchNewElement (&item, ElementEventHandler);
+			if (err != NoError)
+				return err;
+		}
 	}
 	return NoError;
 }
