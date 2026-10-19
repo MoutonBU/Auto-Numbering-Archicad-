@@ -46,6 +46,8 @@ jobs:
           	<CalledMacros SectVersion="2" SectionFlags="0" SubIdent="0"/>
           	<Script_3D SectVersion="20" SectionFlags="0" SubIdent="0"/>
           	<Script_2D SectVersion="20" SectionFlags="0" SubIdent="0"/>
+          	<Script_UI SectVersion="20" SectionFlags="0" SubIdent="0"/>
+          	<Script_VL SectVersion="20" SectionFlags="0" SubIdent="0"/>
           	<ParamSection SectVersion="27" SectionFlags="0" SubIdent="0"/>
           	<Copyright SectVersion="1" SectionFlags="0" SubIdent="0"/>
           	<Keywords SectVersion="1" SectionFlags="0" SubIdent="0"/>
@@ -132,10 +134,10 @@ jobs:
           			<Description><![CDATA["Font"]]></Description>
           			<Value><![CDATA["Arial"]]></Value>
           		</String>
-          		<Boolean Name="txtBold">
-          			<Description><![CDATA["Bold"]]></Description>
+          		<Integer Name="txtStyle">
+          			<Description><![CDATA["Style"]]></Description>
           			<Value>0</Value>
-          		</Boolean>
+          		</Integer>
           		<PenColor Name="txtPen">
           			<Description><![CDATA["Text pen"]]></Description>
           			<Value>1</Value>
@@ -149,7 +151,7 @@ jobs:
           			<Value><![CDATA[""]]></Value>
           		</String>
           		<Integer Name="frameType">
-          			<Description><![CDATA["Frame (0 none, 1 circle, 2 square)"]]></Description>
+          			<Description><![CDATA["Frame"]]></Description>
           			<Value>0</Value>
           		</Integer>
           		<RealNum Name="frameSize">
@@ -181,14 +183,49 @@ jobs:
           	rect2 -r, -r, r, r
           endif
 
-          face = 0
-          if txtBold then face = 1
-          define style "anum_style" txtFont, txtSize, 5, face
+          define style "anum_style" txtFont, txtSize, 5, txtStyle
           set style "anum_style"
           pen txtPen
           text2 0, 0, txt
 
           hotspot2 0, 0
+          EOF
+
+          cat > "$D/scripts/vl.gdl" <<'EOF'
+          values "txtFont" "Arial", "Arial Black", "Arial Narrow", "Bahnschrift", "Calibri", "Cambria", "Candara", "Century Gothic", "Comic Sans MS", "Consolas", "Courier New", "Franklin Gothic Medium", "Gabriola", "Georgia", "Impact", "Lucida Console", "Palatino Linotype", "Segoe UI", "Segoe Print", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana", "Helvetica"
+          values{2} "txtStyle" 0, "Regular", 1, "Bold", 2, "Italic", 3, "Bold Italic", 4, "Underline"
+          values{2} "frameType" 0, "No frame", 1, "Circle", 2, "Square"
+          values "txtSize" range [0.5, 50]
+          values "frameSize" range [0.5, 100]
+          EOF
+
+          cat > "$D/scripts/ui.gdl" <<'EOF'
+          ui_dialog "AutoNumber Text", 360, 318
+
+          ui_outfield "Shows this object's Element ID as text. Set the ID in Tags and Categories.", 12, 8, 336, 30
+          ui_separator 12, 44, 348, 44
+
+          ui_outfield "Font", 12, 58, 110, 20
+          ui_infield "txtFont", 132, 54, 216, 24
+          ui_outfield "Style", 12, 90, 110, 20
+          ui_infield "txtStyle", 132, 86, 216, 24
+          ui_outfield "Size (mm on paper)", 12, 122, 116, 20
+          ui_infield "txtSize", 132, 118, 216, 24
+          ui_outfield "Text pen", 12, 154, 110, 20
+          ui_infield "txtPen", 132, 150, 216, 24
+          ui_separator 12, 184, 348, 184
+
+          ui_outfield "Text before number", 12, 198, 116, 20
+          ui_infield "prefix", 132, 194, 216, 24
+          ui_outfield "Text after number", 12, 230, 116, 20
+          ui_infield "suffix", 132, 226, 216, 24
+          ui_separator 12, 260, 348, 260
+
+          ui_outfield "Frame", 12, 274, 110, 20
+          ui_infield "frameType", 132, 270, 216, 24
+          ui_outfield "Frame size / pen", 12, 304, 116, 20
+          ui_infield "frameSize", 132, 300, 104, 24
+          ui_infield "framePen", 244, 300, 104, 24
           EOF
 
           cat > "$D/scripts/3d.gdl" <<'EOF'
@@ -197,16 +234,14 @@ jobs:
 
           find gdl_src -type f
 
-      - name: Download LP_XMLConverter (Archicad 29 build)
+      - name: Download LP_XMLConverter
         run: |
           curl -L --fail -o lp.zip "https://github.com/GRAPHISOFT/archicad-api-devkit/releases/download/29.3000/LP_XMLConverter.WIN.29.3000.zip"
           7z x lp.zip -oLP -y > /dev/null
-          EXE=$(find LP -iname LP_XMLConverter.exe | head -1)
-          echo "Found converter: $EXE"
-          test -n "$EXE"
-          echo "LP=$EXE" >> "$GITHUB_ENV"
-          echo "---- converter usage ----"
-          "$EXE" 2>&1 | head -80 || true
+          LP=$(find LP -iname LP_XMLConverter.exe | head -1)
+          echo "Found converter: $LP"
+          test -n "$LP"
+          echo "LP=$LP" >> "$GITHUB_ENV"
 
       - name: Compile the library part (.gsm)
         run: |
