@@ -1,0 +1,10 @@
+﻿#include "ResourceIds.hpp"
+
+'STR#' ID_ADDON_INFO "Add-on Name and Description" {
+/* [  1] */		"AutoNumber"
+/* [  2] */		"Automatically numbers placed elements (1, 2, 3 ...) in their Element ID"
+}
+
+'STR#' ID_ADDON_MENU "Strings for the Menu" {
+/* [  1] */		"Auto-Number Placed Elements ^E3 ^ES ^EE ^EI ^ED ^ET ^10001"
+}

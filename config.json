@@ -1,0 +1,13 @@
+{
+    "addOnName": "AutoNumber",
+    "defaultLanguage": "INT",
+    "languages": [
+        "INT"
+    ],
+    "version": "1.0.0",
+    "copyright": {
+        "name": "AutoNumber",
+        "year": "%Y"
+    },
+    "description": "Automatically numbers placed elements (1, 2, 3 ...) in their Element ID"
+}
